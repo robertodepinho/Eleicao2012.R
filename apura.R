@@ -1,6 +1,31 @@
 library(XML)
-#resultFile = "~/Documents/source_what/ToolKit_what/eleicao/sp71072-0011-e000473-v/sp71072-0011-e000473-v.xml"
-#resultFile = "/Users/robertopinho/Documents/source_what/eleicao/2012/divulgacao/oficial/47/distribuicao/sp/sp71072-0011-e000473-v/sp71072-0011-e000473-v.xml"
+
+munic = read.table("lista_municipios_justica_eleitoral.txt", head=T, stringsAsFactors=F, encoding="latin1", sep=";", quote="")
+
+getMUNIC<-function(nome="SALVADOR", listaMu=munic){
+  MUNIC = listaMu[nome==listaMu$NOME,"CÓDIGO"]
+  return(MUNIC)
+}
+
+
+apuraMU <- function(
+  UF="ba"
+                    , 
+  MUNIC="38490"
+  ,
+  PASTA= "~/Documents/source_what/eleicao/2012/divulgacao/oficial/48/distribuicao/"
+  ) {
+  #<UF><MUNIC>-<CCCC>-e<ELEICA>-v.xml
+  arquivo = paste(UF,MUNIC,"-0011-e000483-v",sep="")
+  print(arquivo)
+  arquivoZip = paste(arquivo, ".zip", sep="")
+  arquivoXml = paste(arquivo, ".xml", sep="")
+  arquivoFull = paste(PASTA, tolower(UF),"/", arquivoZip, sep="")
+  unzip(zipfile=arquivoFull)
+  return(apuraPorZona(arquivoXml))
+  
+}
+
 
 apuraPorZona <- function(
   resultFile = "sp71072-0011-e000473-v.xml"
@@ -51,3 +76,7 @@ apuraPorZona <- function(
   return(aggregate(cbind(totalVotos,totalVotosCorr) ~ numeroCandidato, zona.voto, sum))
   
 }
+
+apuraMU(UF="ba",MUNIC=getMUNIC("SALVADOR"))
+
+apuraMU(UF="sp",MUNIC=getMUNIC("SÃO PAULO"))
