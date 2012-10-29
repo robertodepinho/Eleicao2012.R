@@ -57,8 +57,9 @@ apuraPorZona <- function(
     x = getNodeSet(doc=result,path=pafi)
     zv  = as.data.frame(t(sapply(x, xmlAttrs)), stringsAsFactors=F)
     zv$zonaCod = zonaCod
+    if(!is.null(zv$totalVotos)){ 
     zv$totalVotos = as.numeric(zv$totalVotos)
-    zona.voto= rbind(zona.voto,zv)
+    zona.voto= rbind(zona.voto,zv)}
   }
   
   #aggregate(totalVotos ~ numeroCandidato, zona.voto, sum)
@@ -70,6 +71,11 @@ apuraPorZona <- function(
   
   #estimativa
   zona.result$fator = zona.result$eleitorado / zona.result$eleitoradoApurado
+  zona.result$per = zona.result$eleitoradoApurado / zona.result$eleitorado *100
+  print(summary(zona.result$per))
+  print(summary(zona.result$eleitoradoApurado))
+  
+  zona.result$fator = ifelse(is.finite(zona.result$fator),zona.result$fator,0)
   zona.voto = merge(zona.voto,zona.result[, c("codigoAbrangencia","fator")],by.x="zonaCod", by.y="codigoAbrangencia", all=T)
   zona.voto$totalVotosCorr = zona.voto$totalVotos * zona.voto$fator
   
@@ -77,6 +83,48 @@ apuraPorZona <- function(
   
 }
 
-apuraMU(UF="ba",MUNIC=getMUNIC("SALVADOR"))
+hist=data.frame()
 
-apuraMU(UF="sp",MUNIC=getMUNIC("SÃO PAULO"))
+x=apuraMU(UF="ba",MUNIC=getMUNIC("SALVADOR"))
+Sys.time()
+x
+x$totalVotosCorr / sum(x$totalVotosCorr)
+x$totalVotos / sum(x$totalVotos)
+x$uf = "ba"
+x$hora = Sys.time()
+hist = rbind(hist,x)
+
+x = apuraMU(UF="sp",MUNIC=getMUNIC("SÃO PAULO"))
+Sys.time()
+x
+x$totalVotosCorr / sum(x$totalVotosCorr)
+x$totalVotos / sum(x$totalVotos)
+x$uf = "sp"
+x$hora = Sys.time()
+hist = rbind(hist,x)
+
+#analise de erro
+histo = hist
+histo.uf = histo[ histo$uf=="ba", ]
+table(histo.uf$hora)
+histo.hora = aggregate(cbind(totalVotos,totalVotosCorr) ~ hora, histo.uf, sum)
+histo.uf = merge(histo.uf, histo.hora, by= "hora", all=F)
+histo.uf$per = histo.uf$totalVotos.x / histo.uf$totalVotos.y * 100
+histo.uf$perCorr = histo.uf$totalVotosCorr.x / histo.uf$totalVotosCorr.y * 100
+
+histo.ganha = histo.uf[ histo.uf$numeroCandidato==25,]
+plot(histo.ganha$per ~ histo.ganha$hora, col = "red", ylim=c(53,57))
+lines(histo.ganha$per ~ histo.ganha$hora, col = "red")
+lines(histo.ganha$perCorr ~ histo.ganha$hora, col = "blue")
+
+
+histo.ganha$delta = abs(histo.ganha$per-53.50816)
+histo.ganha$deltaCorr = abs(histo.ganha$perCorr-53.50816)
+plot(histo.ganha$delta~ histo.ganha$hora, col = "red")
+lines(histo.ganha$delta ~ histo.ganha$hora, col = "red")
+lines(histo.ganha$deltaCorr ~ histo.ganha$hora, col = "blue")
+
+
+
+
+
